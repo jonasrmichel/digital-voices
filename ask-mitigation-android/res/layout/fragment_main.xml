@@ -1,0 +1,94 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.jonas.digitalvoices.MainActivity$MessageFragment" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:gravity="center_horizontal"
+        android:orientation="vertical" >
+
+        <EditText
+            android:id="@+id/EditTextToPlay"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/play_text_hint"
+            android:padding="5dp" >
+        </EditText>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal"
+            android:padding="5dp" >
+
+            <CheckBox
+                android:id="@+id/CheckBoxUseCompression"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/play_option_compression"
+                android:textSize="12dp" />
+
+            <CheckBox
+                android:id="@+id/CheckBoxUseFEC"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/play_option_fec"
+                android:textSize="12dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal"
+            android:padding="5dp"
+            android:weightSum="2" >
+
+            <Button
+                android:id="@+id/ButtonPlay"
+                android:layout_width="fill_parent"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="@string/button_text_play" >
+            </Button>
+
+            <Button
+                android:id="@+id/ButtonListen"
+                android:layout_width="fill_parent"
+                android:layout_height="50dp"
+                android:layout_weight="1"
+                android:text="@string/button_text_listen" >
+            </Button>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/TextViewStatus"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:padding="5dp"
+            android:text=""
+            android:textColor="#aaacae"
+            android:textSize="20dp" >
+        </TextView>
+
+        <TextView
+            android:id="@+id/TextViewListen"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:padding="5dp"
+            android:text=""
+            android:textSize="25dp" >
+        </TextView>
+    </LinearLayout>
+
+</RelativeLayout>

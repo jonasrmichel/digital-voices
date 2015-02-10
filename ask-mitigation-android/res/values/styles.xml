@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- File created by the Android Action Bar Style Generator
+
+     Copyright (C) 2011 The Android Open Source Project
+     Copyright (C) 2012 readyState Software Ltd
+
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+  
+          http://www.apache.org/licenses/LICENSE-2.0
+  
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+-->
+
+<resources>
+
+    <style name="Theme.Acousticmodemtheme" parent="@style/Theme.AppCompat.Light.DarkActionBar">
+        <item name="actionBarItemBackground">@drawable/selectable_background_acousticmodemtheme</item>
+        <item name="popupMenuStyle">@style/PopupMenu.Acousticmodemtheme</item>
+        <item name="dropDownListViewStyle">@style/DropDownListView.Acousticmodemtheme</item>
+        <item name="actionBarTabStyle">@style/ActionBarTabStyle.Acousticmodemtheme</item>
+        <item name="actionDropDownStyle">@style/DropDownNav.Acousticmodemtheme</item>
+        <item name="actionBarStyle">@style/ActionBar.Solid.Acousticmodemtheme</item>
+        <item name="actionModeBackground">@drawable/cab_background_top_acousticmodemtheme</item>
+        <item name="actionModeSplitBackground">@drawable/cab_background_bottom_acousticmodemtheme</item>
+        <item name="actionModeCloseButtonStyle">@style/ActionButton.CloseMode.Acousticmodemtheme</item>
+
+                <!-- Light.DarkActionBar specific -->
+        <item name="actionBarWidgetTheme">@style/Theme.Acousticmodemtheme.Widget</item>
+
+    </style>
+
+    <style name="ActionBar.Solid.Acousticmodemtheme" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
+        <item name="background">@drawable/ab_solid_acousticmodemtheme</item>
+        <item name="backgroundStacked">@drawable/ab_stacked_solid_acousticmodemtheme</item>
+        <item name="backgroundSplit">@drawable/ab_bottom_solid_acousticmodemtheme</item>
+        <item name="progressBarStyle">@style/ProgressBar.Acousticmodemtheme</item>
+    </style>
+
+    <style name="ActionBar.Transparent.Acousticmodemtheme" parent="@style/Widget.AppCompat.ActionBar">
+        <item name="background">@drawable/ab_transparent_acousticmodemtheme</item>
+        <item name="progressBarStyle">@style/ProgressBar.Acousticmodemtheme</item>
+    </style>
+	
+    <style name="PopupMenu.Acousticmodemtheme" parent="@style/Widget.AppCompat.PopupMenu">	
+        <item name="android:popupBackground">@drawable/menu_dropdown_panel_acousticmodemtheme</item>	
+    </style>
+	
+    <style name="DropDownListView.Acousticmodemtheme" parent="@style/Widget.AppCompat.ListView.DropDown">
+        <item name="android:listSelector">@drawable/selectable_background_acousticmodemtheme</item>
+    </style>
+
+    <style name="ActionBarTabStyle.Acousticmodemtheme" parent="@style/Widget.AppCompat.ActionBar.TabView">
+        <item name="android:background">@drawable/tab_indicator_ab_acousticmodemtheme</item>
+    </style>
+	
+    <style name="DropDownNav.Acousticmodemtheme" parent="@style/Widget.AppCompat.Spinner.DropDown.ActionBar">
+        <item name="android:background">@drawable/spinner_background_ab_acousticmodemtheme</item>
+        <item name="android:popupBackground">@drawable/menu_dropdown_panel_acousticmodemtheme</item>
+        <item name="android:dropDownSelector">@drawable/selectable_background_acousticmodemtheme</item>
+    </style>
+    
+    <style name="ProgressBar.Acousticmodemtheme" parent="@style/Widget.AppCompat.ProgressBar.Horizontal">
+        <item name="android:progressDrawable">@drawable/progress_horizontal_acousticmodemtheme</item>
+    </style>
+    
+    <style name="ActionButton.CloseMode.Acousticmodemtheme" parent="@style/Widget.AppCompat.ActionButton.CloseMode">
+        <item name="android:background">@drawable/btn_cab_done_acousticmodemtheme</item>
+    </style>
+    
+    <!-- this style is only referenced in a Light.DarkActionBar based theme -->
+    <style name="Theme.Acousticmodemtheme.Widget" parent="@style/Theme.AppCompat">
+        <item name="popupMenuStyle">@style/PopupMenu.Acousticmodemtheme</item>
+        <item name="dropDownListViewStyle">@style/DropDownListView.Acousticmodemtheme</item>
+    </style>
+
+</resources>

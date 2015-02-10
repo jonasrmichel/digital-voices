@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Acoustic Modem</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="play_text_hint">Type some text to play</string>
+    <string name="play_option_compression">Use Compression</string>
+    <string name="play_option_fec">Use Error Correction</string>
+    <string name="button_text_play">Play</string>
+    <string name="button_text_listen">Listen</string>
+    <string name="button_text_stop_listening">Stop Listening</string>
+    <string name="empty_text_warning">Please type some text</string>
+
+</resources>
