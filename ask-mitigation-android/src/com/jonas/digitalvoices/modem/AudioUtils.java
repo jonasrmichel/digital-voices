@@ -11,15 +11,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.zip.DataFormatException;
-import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 import net.fec.openrq.ArrayDataEncoder;
 import net.fec.openrq.EncodingPacket;
 import net.fec.openrq.OpenRQ;
 import net.fec.openrq.encoder.SourceBlockEncoder;
 import net.fec.openrq.parameters.FECParameters;
+import android.util.Log;
+
+import com.github.icedrake.jsmaz.Smaz;
 
 /**
  * 
@@ -140,67 +140,22 @@ public class AudioUtils {
 
 	}
 
-	public static void performArray(byte[] array, boolean compress, boolean fec)
+	public static void performString(String input, boolean compress, boolean fec)
 			throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		byte[] array = null;
 
 		if (compress)
-			array = compress(array);
+			array = new Smaz().compress(input);
+
+		if (array == null)
+			array = input.getBytes();
 
 		if (fec)
 			array = applyFECEncoding(array);
 
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Encoder.encodeStream(new ByteArrayInputStream(array), baos);
 		performData(baos.toByteArray());
-	}
-
-	/**
-	 * Returns a compressed version of the provided byte array.
-	 * 
-	 * @param bytes
-	 *            an array of uncompressed bytes.
-	 * @return an array containing the compressed bytes.
-	 */
-	public static byte[] compress(byte[] bytes) {
-		Deflater deflater = new Deflater(Constants.COMPRESSION_LEVEL);
-		deflater.setInput(bytes);
-		deflater.finish();
-
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(bytes.length);
-		byte[] buf = new byte[4 * 1024];
-		while (!deflater.finished()) {
-			int byteCount = deflater.deflate(buf);
-			baos.write(buf, 0, byteCount);
-		}
-		deflater.end();
-
-		byte[] compressed = baos.toByteArray();
-
-		return compressed;
-	}
-
-	/**
-	 * Returns an uncompressed version of the provided byte array.
-	 * 
-	 * @param bytes
-	 *            an array of compressed bytes.
-	 * @return an array containing the uncompressed bytes.
-	 */
-	public static byte[] decompress(byte[] bytes) throws DataFormatException {
-		Inflater inflater = new Inflater();
-		inflater.setInput(bytes);
-
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(bytes.length);
-		byte[] buf = new byte[4 * 1024];
-		while (!inflater.finished()) {
-			int byteCount = inflater.inflate(buf);
-			baos.write(buf, 0, byteCount);
-		}
-		inflater.end();
-
-		byte[] decompressed = baos.toByteArray();
-
-		return decompressed;
 	}
 
 	/**

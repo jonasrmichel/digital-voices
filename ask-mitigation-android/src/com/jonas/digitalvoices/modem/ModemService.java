@@ -105,8 +105,7 @@ public class ModemService extends Service {
 		try {
 			// try to play the file
 			Log.d(TAG, "Playing: " + input);
-			byte[] inputBytes = input.getBytes();
-			AudioUtils.performArray(inputBytes, compress, fec);
+			AudioUtils.performString(input, compress, fec);
 
 			/**
 			 * length of play time (ms) = nDurations * samples/duration * 1/fs *
@@ -114,7 +113,7 @@ public class ModemService extends Service {
 			 */
 			millisPlayTime = (long) ((Constants.kPlayJitter
 					+ Constants.kDurationsPerHail + Constants.kBytesPerDuration
-					* inputBytes.length + Constants.kDurationsPerCRC)
+					* input.length() + Constants.kDurationsPerCRC)
 					* Constants.kSamplesPerDuration
 					/ Constants.kSamplingFrequency * 1000);
 
