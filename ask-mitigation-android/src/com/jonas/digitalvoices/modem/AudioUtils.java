@@ -17,7 +17,10 @@ import net.fec.openrq.EncodingPacket;
 import net.fec.openrq.OpenRQ;
 import net.fec.openrq.encoder.SourceBlockEncoder;
 import net.fec.openrq.parameters.FECParameters;
+import net.fec.openrq.parameters.ParameterChecker;
+import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.github.icedrake.jsmaz.Smaz;
 
@@ -140,12 +143,19 @@ public class AudioUtils {
 
 	}
 
-	public static void performString(String input, boolean compress, boolean fec)
-			throws IOException {
+	public static void performString(Context context, String input,
+			boolean compress, boolean fec) throws IOException {
 		byte[] array = null;
 
-		if (compress)
+		if (compress) {
 			array = new Smaz().compress(input);
+
+			int compressionRatio = (int) ((float) array.length
+					/ (float) input.length() * 100);
+			Toast.makeText(context,
+					"Compression ratio of " + compressionRatio + "%",
+					Toast.LENGTH_SHORT).show();
+		}
 
 		if (array == null)
 			array = input.getBytes();
@@ -172,7 +182,7 @@ public class AudioUtils {
 
 		// apply forward error correction encoding
 		FECParameters fecParams = FECParameters.deriveParameters(dataLength,
-				Constants.FEC_PAYLOAD_BYTES,
+				Constants.FEC_SYMBOL_SIZE,
 				Constants.FEC_MAX_DECODING_BLOCK_BYTES);
 		ArrayDataEncoder fecDataEncoder = OpenRQ.newEncoder(bytes, fecParams);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream(dataLength);
@@ -181,7 +191,8 @@ public class AudioUtils {
 			// encode the fec source block source packets
 			for (EncodingPacket packet : sourceBlockEncoder
 					.sourcePacketsIterable()) {
-				baos.write(packet.asArray(), 0, packet.numberOfSymbols());
+				baos.write(packet.asArray(), packet.asArray().length
+						- Constants.FEC_SYMBOL_SIZE, Constants.FEC_SYMBOL_SIZE);
 			}
 
 			// number of repair symbols
@@ -192,7 +203,8 @@ public class AudioUtils {
 			// encode the fec source block repair packets
 			for (EncodingPacket packet : sourceBlockEncoder
 					.repairPacketsIterable(numRepairSymbols)) {
-				baos.write(packet.asArray(), 0, packet.numberOfSymbols());
+				baos.write(packet.asArray(), packet.asArray().length
+						- Constants.FEC_SYMBOL_SIZE, Constants.FEC_SYMBOL_SIZE);
 			}
 		}
 

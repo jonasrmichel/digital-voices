@@ -1,25 +1,24 @@
 package com.jonas.digitalvoices.modem;
 
-import java.util.zip.Deflater;
-
 /**
  * Copyright 2002 by the authors. All rights reserved.
  * 
- * Author: Cristina V Lopes (Modified by Jonas Michel, 2012)
+ * Author: Cristina V Lopes (Modified by Jonas Michel, 2015)
  */
 
 public interface Constants {
 
-	public static final int COMPRESSION_LEVEL = Deflater.BEST_COMPRESSION;
-	
+	/** The maximum length of a playable text message. */
+	public static final int MAX_INPUT_LENGTH = 32;
+
 	/** The size of an FEC symbol. */
-	public static final int FEC_PAYLOAD_BYTES = 4;
-	
+	public static final int FEC_SYMBOL_SIZE = 1;
+
 	/**
 	 * The maximum number of bytes for an FEC source block decodable in working
 	 * memory.
 	 */
-	public static final int FEC_MAX_DECODING_BLOCK_BYTES = 580;
+	public static final int FEC_MAX_DECODING_BLOCK_BYTES = 256;
 
 	/**
 	 * The degree of FEC repair as a proportion of FEC source block source

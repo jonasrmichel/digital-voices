@@ -105,7 +105,7 @@ public class ModemService extends Service {
 		try {
 			// try to play the file
 			Log.d(TAG, "Playing: " + input);
-			AudioUtils.performString(input, compress, fec);
+			AudioUtils.performString(getApplication(), input, compress, fec);
 
 			/**
 			 * length of play time (ms) = nDurations * samples/duration * 1/fs *
