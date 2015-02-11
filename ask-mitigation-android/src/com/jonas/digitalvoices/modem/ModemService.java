@@ -133,7 +133,7 @@ public class ModemService extends Service {
 
 		// try to play the file
 		Log.d(TAG, "Playing: " + input);
-		new PlayStringTask().execute(input);
+		new SendDataTask().execute(ArrayUtils.box(input.getBytes()));
 
 		/**
 		 * length of play time (ms) = nDurations * samples/duration * 1/fs *
@@ -148,44 +148,38 @@ public class ModemService extends Service {
 	}
 
 	private void receivedBytes(byte[] bytes) {
-		String receivedText = null;
-
+		new ReceiveDataTask().execute(ArrayUtils.box(bytes));
 	}
 
-	private class PlayStringTask extends AsyncTask<String, Void, Integer> {
-		public static final String FLAG_USE_COMPRESSION = "compression";
-		public static final String FLAG_USE_FEC = "fec";
-
+	/**
+	 * An AsyncTask to compress and/or apply error correction to a string then
+	 * convert it to sound.
+	 */
+	private class SendDataTask extends AsyncTask<Byte, Void, Integer> {
 		@Override
-		protected Integer doInBackground(String... strings) {
-			String input = strings[0];
-			if (input == null)
-				return -1;
-
-			byte[] array = null;
+		protected Integer doInBackground(Byte... bytes) {
+			byte[] data = ArrayUtils.unbox(bytes);
 
 			// compress input if necessary
 			int compressionRatio = -1;
 			if (mUseCompression) {
-				array = new Smaz().compress(input);
+				int uncompressedLength = data.length;
+				data = new Smaz().compress(new String(data));
 
-				compressionRatio = (int) ((float) array.length
-						/ (float) input.length() * 100);
+				compressionRatio = (int) ((float) data.length
+						/ (float) uncompressedLength * 100);
 			}
-
-			if (array == null)
-				array = input.getBytes();
 
 			// apply error correction if necessary
 			if (mUseFEC)
-				array = applyFECEncoding(array);
+				data = applyFECEncoding(data);
 
 			try {
 				// play the input
-				AudioUtils.performArray(array);
+				AudioUtils.performArray(data);
 
 			} catch (IOException e) {
-				Log.d(TAG, "Could not encode " + input + " because of " + e);
+				Log.d(TAG, "Could not encode data because of " + e);
 			}
 
 			return compressionRatio;
@@ -202,12 +196,14 @@ public class ModemService extends Service {
 		}
 
 		/**
-		 * Applies forward error correction encoding to an array of bytes.
+		 * Applies forward error correction encoding to an array of bytes. The
+		 * first byte of the encoded byte array is the length of the encoded
+		 * data.
 		 * 
 		 * @param bytes
 		 *            an array of bytes to encode with FEC.
-		 * @return an array list of chunks containing the data's FEC symbols as
-		 *         payloads.
+		 * @return the encoded byte array with the first byte containing the
+		 *         length of the encoded data.
 		 */
 		private byte[] applyFECEncoding(byte[] bytes) {
 			Log.d(TAG, "applyFECEncoding(): " + Arrays.toString(bytes));
@@ -262,14 +258,15 @@ public class ModemService extends Service {
 		}
 	}
 
-	private class DecodeBytesTask extends AsyncTask<Byte, Void, Void> {
+	/**
+	 * An AsyncTask to uncompress and/or error correction decoding to an array
+	 * of bytes that was received as sound.
+	 */
+	private class ReceiveDataTask extends AsyncTask<Byte, Void, Void> {
 
 		@Override
 		protected Void doInBackground(Byte... bytes) {
-			// unbox the byte values
-			byte[] data = new byte[bytes.length];
-			for (int i = 0; i < bytes.length; i++)
-				data[i] = bytes[i].byteValue();
+			byte[] data = ArrayUtils.unbox(bytes);
 
 			// extract the text content
 			String text = null;
@@ -293,6 +290,15 @@ public class ModemService extends Service {
 			return null;
 		}
 
+		/**
+		 * Applies forward error correction decoding to an array of bytes.
+		 * Assumes that the first byte in the array is the expected length of
+		 * the transmitted data.
+		 * 
+		 * @param bytes
+		 *            an array of bytes to decode with FEC.
+		 * @return the decoded byte array.
+		 */
 		private byte[] applyFECDecoding(byte[] bytes) {
 			// data length is encoded as the first bye
 			int dataLength = (int) bytes[0];
