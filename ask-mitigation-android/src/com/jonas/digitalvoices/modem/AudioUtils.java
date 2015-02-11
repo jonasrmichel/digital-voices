@@ -11,13 +11,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Arrays;
 
+import net.fec.openrq.ArrayDataDecoder;
 import net.fec.openrq.ArrayDataEncoder;
 import net.fec.openrq.EncodingPacket;
 import net.fec.openrq.OpenRQ;
+import net.fec.openrq.Parsed;
 import net.fec.openrq.encoder.SourceBlockEncoder;
 import net.fec.openrq.parameters.FECParameters;
-import net.fec.openrq.parameters.ParameterChecker;
 import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
@@ -138,76 +140,13 @@ public class AudioUtils {
 	}
 
 	public static void performData(byte[] data) throws IOException {
-
 		PlayThread p = new PlayThread(data);
-
 	}
 
-	public static void performString(Context context, String input,
-			boolean compress, boolean fec) throws IOException {
-		byte[] array = null;
-
-		if (compress) {
-			array = new Smaz().compress(input);
-
-			int compressionRatio = (int) ((float) array.length
-					/ (float) input.length() * 100);
-			Toast.makeText(context,
-					"Compression ratio of " + compressionRatio + "%",
-					Toast.LENGTH_SHORT).show();
-		}
-
-		if (array == null)
-			array = input.getBytes();
-
-		if (fec)
-			array = applyFECEncoding(array);
-
+	public static void performArray(byte[] array) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		Encoder.encodeStream(new ByteArrayInputStream(array), baos);
 		performData(baos.toByteArray());
 	}
 
-	/**
-	 * Applies forward error correction encoding to an array of bytes.
-	 * 
-	 * @param bytes
-	 *            an array of bytes to encode with FEC.
-	 * @return an array list of chunks containing the data's FEC symbols as
-	 *         payloads.
-	 */
-	public static byte[] applyFECEncoding(byte[] bytes) {
-		// the total length in bytes of the data to be encoded
-		int dataLength = bytes.length;
-
-		// apply forward error correction encoding
-		FECParameters fecParams = FECParameters.deriveParameters(dataLength,
-				Constants.FEC_SYMBOL_SIZE,
-				Constants.FEC_MAX_DECODING_BLOCK_BYTES);
-		ArrayDataEncoder fecDataEncoder = OpenRQ.newEncoder(bytes, fecParams);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(dataLength);
-		for (SourceBlockEncoder sourceBlockEncoder : fecDataEncoder
-				.sourceBlockIterable()) {
-			// encode the fec source block source packets
-			for (EncodingPacket packet : sourceBlockEncoder
-					.sourcePacketsIterable()) {
-				baos.write(packet.asArray(), packet.asArray().length
-						- Constants.FEC_SYMBOL_SIZE, Constants.FEC_SYMBOL_SIZE);
-			}
-
-			// number of repair symbols
-			// (e.g. the number may depend on a channel loss rate)
-			int numRepairSymbols = (int) Math.ceil(sourceBlockEncoder
-					.numberOfSourceSymbols() * Constants.FEC_DEGREE_REPAIR);
-
-			// encode the fec source block repair packets
-			for (EncodingPacket packet : sourceBlockEncoder
-					.repairPacketsIterable(numRepairSymbols)) {
-				baos.write(packet.asArray(), packet.asArray().length
-						- Constants.FEC_SYMBOL_SIZE, Constants.FEC_SYMBOL_SIZE);
-			}
-		}
-
-		return baos.toByteArray();
-	}
 }

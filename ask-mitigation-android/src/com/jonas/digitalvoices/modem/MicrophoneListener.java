@@ -15,8 +15,7 @@ import android.media.MediaRecorder;
 /**
  * This thread puts bytes from the microphone into the StreamDecoder's buffer.
  * 
- * @author CVL
- * (Modified by Jonas Michel, 2012)
+ * @author CVL (Modified by Jonas Michel, 2015)
  */
 public class MicrophoneListener implements Runnable {
 
@@ -49,7 +48,7 @@ public class MicrophoneListener implements Runnable {
 		
     	try {
     	  /**
-    	   * NOTE: we want buffSize large so that we don't loose samples when the 
+    	   * NOTE: we want buffSize large so that we don't lose samples when the 
     	   * StreamDecoder thread kicks in. But we want to read a small number of 
     	   * samples at a time, so that StreamDecoder can process them and they get
     	   * freed from the buffer as soon as possible.

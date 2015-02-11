@@ -19,12 +19,18 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.jonas.digitalvoices.modem.ModemService;
 
+/**
+ * This fragment hosts all the UI and controls to send and receive text using
+ * the acoustic modem service.
+ */
 public class MessageFragment extends Fragment {
 
 	private boolean mIsBound = false;
@@ -64,11 +70,29 @@ public class MessageFragment extends Fragment {
 		View rootView = (View) inflater.inflate(R.layout.fragment_main,
 				container, false);
 
+		// setup UI elements
 		mEditTextToPlay = (EditText) rootView.findViewById(R.id.EditTextToPlay);
 
 		mCheckBoxUseCompression = (CheckBox) rootView
 				.findViewById(R.id.CheckBoxUseCompression);
+		mCheckBoxUseCompression
+				.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+					@Override
+					public void onCheckedChanged(CompoundButton buttonView,
+							boolean isChecked) {
+						mModemService.setUseCompression(isChecked);
+					}
+				});
+
 		mCheckBoxUseFEC = (CheckBox) rootView.findViewById(R.id.CheckBoxUseFEC);
+		mCheckBoxUseFEC
+				.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+					@Override
+					public void onCheckedChanged(CompoundButton buttonView,
+							boolean isChecked) {
+						mModemService.setUseFEC(isChecked);
+					}
+				});
 
 		mButtonPlay = (Button) rootView.findViewById(R.id.ButtonPlay);
 		mButtonPlay.setOnClickListener(new View.OnClickListener() {
@@ -81,9 +105,7 @@ public class MessageFragment extends Fragment {
 					return; // nothing to play
 				}
 
-				mModemService.playData(str,
-						mCheckBoxUseCompression.isChecked(),
-						mCheckBoxUseFEC.isChecked());
+				mModemService.playData(str);
 			}
 		});
 
@@ -131,6 +153,7 @@ public class MessageFragment extends Fragment {
 	public void onStart() {
 		super.onStart();
 
+		// bind to the modem service
 		Intent intent = new Intent(getActivity(), ModemService.class);
 		getActivity().bindService(intent, mModemConnection,
 				Context.BIND_AUTO_CREATE);
@@ -141,6 +164,7 @@ public class MessageFragment extends Fragment {
 		super.onStop();
 
 		if (mIsBound) {
+			// unbind from the modem service
 			getActivity().unbindService(mModemConnection);
 			mIsBound = false;
 		}
@@ -199,6 +223,10 @@ public class MessageFragment extends Fragment {
 
 	}
 
+	/**
+	 * Updates the status and listen text views with data from the modem
+	 * service.
+	 */
 	private void updateResults() {
 		if (mModemService != null && mModemService.isListening()) {
 			mTextViewStatus.setText(mModemService.getBacklogStatus());

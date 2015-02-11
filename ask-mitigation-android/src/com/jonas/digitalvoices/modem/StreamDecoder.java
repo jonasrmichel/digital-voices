@@ -9,14 +9,20 @@ package com.jonas.digitalvoices.modem;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+
 /**
  * This starts a Thread which decodes data in an AudioBuffer and writes it to an
  * OutputStream. StreamDecoder holds the buffer where the MicrophoneListener
  * puts bytes.
  * 
- * @author CVL
+ * @author CVL (Modified by Jonas Michel, 2015)
  */
 public class StreamDecoder implements Runnable {
+
+	public static final String MSG_KEY_RECEIVED_BYTES = "receivedBytes";
 
 	public static String kThreadName = "StreamDecoder";
 
@@ -29,7 +35,8 @@ public class StreamDecoder implements Runnable {
 	private ByteArrayOutputStream out = null;
 
 	boolean hasKey = false;
-	private byte[] receivedBytes = null;
+
+	private Handler handler = null;
 
 	/**
 	 * This creates and starts the decoding Thread
@@ -37,8 +44,9 @@ public class StreamDecoder implements Runnable {
 	 * @param _out
 	 *            the OutputStream which will receive the decoded data
 	 */
-	public StreamDecoder(ByteArrayOutputStream _out) {
-		out = _out;
+	public StreamDecoder(ByteArrayOutputStream out, Handler handler) {
+		this.out = out;
+		this.handler = handler;
 		myThread = new Thread(this, kThreadName);
 		myThread.start();
 	}
@@ -49,7 +57,7 @@ public class StreamDecoder implements Runnable {
 		int backlog = (int) ((1000 * buffer.size()) / Constants.kSamplingFrequency);
 
 		if (backlog > 0)
-			s += "Backlog: " + backlog + " mS ";
+			s += "Backlog: " + backlog + " ms ";
 
 		if (hasKey)
 			s += "Found key sequence ";
@@ -63,10 +71,6 @@ public class StreamDecoder implements Runnable {
 
 	public boolean getHasKey() {
 		return hasKey;
-	}
-
-	public byte[] getReceivedBytes() {
-		return receivedBytes;
 	}
 
 	public void run() {
@@ -107,11 +111,13 @@ public class StreamDecoder implements Runnable {
 
 					System.out.println("decoded " + decoded.length + " bytes");
 
-					if (decoded[0] == 0) { // we are recieving no signal, so go
+					if (decoded[0] == 0) { // we are receiving no signal, so go
 											// back to key detection mode
 						// out.write("EOF\r\n".getBytes()); //this is for
 						// debugging
-						receivedBytes = out.toByteArray();
+						receivedBytes(out.toByteArray());
+						; // signal complete reception
+
 						out.reset();
 						hasKey = false;
 						durationsToRead = Constants.kDurationsPerHail;
@@ -232,6 +238,15 @@ public class StreamDecoder implements Runnable {
 				}
 			}
 		}
+	}
+
+	private void receivedBytes(byte[] bytes) {
+		Message msg = handler.obtainMessage();
+		Bundle bundle = new Bundle();
+		bundle.putByteArray(MSG_KEY_RECEIVED_BYTES, bytes);
+		msg.setData(bundle);
+
+		handler.sendMessage(msg);
 	}
 
 	public void quit() {

@@ -35,7 +35,7 @@ public class PlayThread extends Thread{
 	  
 	    AudioTrack atrack = new AudioTrack(AudioManager.STREAM_MUSIC,
 	    							(int) Encoder.kSamplingFrequency,
-	                                AudioFormat.CHANNEL_CONFIGURATION_MONO,
+	                                AudioFormat.CHANNEL_OUT_MONO,
 	                                AudioFormat.ENCODING_PCM_16BIT,  // ENCODING_PCM_8BIT sounds very scratchy, so we use 16 bit and double up the data
 	                                buffer.length, 
 	                                AudioTrack.MODE_STREAM);

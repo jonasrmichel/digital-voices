@@ -244,7 +244,7 @@ public class Decoder implements Constants {
     }
     */
     
-    // original implementaiton from ask-simple-java :
+    // original implementation from ask-simple-java :
     private static double complexDetect(byte[] signal, double frequency){
     	double realSum = 0;
     	double imaginarySum = 0;
