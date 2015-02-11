@@ -26,6 +26,12 @@ public interface Constants {
 	 */
 	public static final float FEC_DEGREE_REPAIR = 1.0f;
 
+	/** The size of an encoded FEC packet byte array. */
+	public static final int FEC_PACKET_SIZE = 9;
+	
+	/** The index of the packet number in an encoded FEC packet byte array. */
+	public static final int FEC_PACKET_NUMBER_INDEX = 3;
+
 	/**
 	 * FEC repair symbol overhead (must be non-negative). The repair symbol
 	 * overhead is given as a number of extra repair symbols that add up

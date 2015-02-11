@@ -4,9 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 
+import net.fec.openrq.ArrayDataDecoder;
 import net.fec.openrq.ArrayDataEncoder;
 import net.fec.openrq.EncodingPacket;
 import net.fec.openrq.OpenRQ;
+import net.fec.openrq.Parsed;
 import net.fec.openrq.encoder.SourceBlockEncoder;
 import net.fec.openrq.parameters.FECParameters;
 import android.app.Service;
@@ -85,8 +87,10 @@ public class ModemService extends Service {
 			return mStreamDecoder.getStatusString();
 	}
 
-	public synchronized String getReceivedText() {
-		return mReceivedText == null ? "" : mReceivedText;
+	public String getReceivedText() {
+		synchronized (mReceivedText) {
+			return mReceivedText == null ? "" : mReceivedText;
+		}
 	}
 
 	public boolean isListening() {
@@ -146,79 +150,6 @@ public class ModemService extends Service {
 	private void receivedBytes(byte[] bytes) {
 		String receivedText = null;
 
-		if (mUseFEC) {
-			// TODO reconstruct fec packets
-		}
-
-		if (mUseCompression)
-			receivedText = new Smaz().decompress(bytes);
-
-		if (receivedText == null)
-			receivedText = new String(bytes);
-
-		synchronized (this) {
-			StringBuilder sb = new StringBuilder(mReceivedText);
-			sb.append("\n");
-			sb.append(receivedText);
-
-			mReceivedText = sb.toString();
-		}
-	}
-
-	/**
-	 * Applies forward error correction encoding to an array of bytes.
-	 * 
-	 * @param bytes
-	 *            an array of bytes to encode with FEC.
-	 * @return an array list of chunks containing the data's FEC symbols as
-	 *         payloads.
-	 */
-	public static byte[] applyFECEncoding(byte[] bytes) {
-		Log.d(TAG, "applyFECEncoding(): " + Arrays.toString(bytes));
-
-		// the total length in bytes of the data to be encoded
-		int dataLength = bytes.length;
-
-		// TODO: send data length as first byte
-
-		// TODO: move compression + fec to ModemService ... use doPostCallback
-		// to keep it off UI thread
-
-		// apply forward error correction encoding
-		FECParameters fecParams = FECParameters.deriveParameters(dataLength,
-				Constants.FEC_SYMBOL_SIZE,
-				Constants.FEC_MAX_DECODING_BLOCK_BYTES);
-		ArrayDataEncoder fecDataEncoder = OpenRQ.newEncoder(bytes, fecParams);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream(dataLength);
-		for (SourceBlockEncoder sourceBlockEncoder : fecDataEncoder
-				.sourceBlockIterable()) {
-			// encode the fec source block source packets
-			for (EncodingPacket packet : sourceBlockEncoder
-					.sourcePacketsIterable()) {
-				Log.d(TAG,
-						"source packet: " + Arrays.toString(packet.asArray()));
-
-				baos.write(packet.asArray(), packet.asArray().length
-						- Constants.FEC_SYMBOL_SIZE, Constants.FEC_SYMBOL_SIZE);
-			}
-
-			// number of repair symbols
-			// (e.g. the number may depend on a channel loss rate)
-			int numRepairSymbols = (int) Math.ceil(sourceBlockEncoder
-					.numberOfSourceSymbols() * Constants.FEC_DEGREE_REPAIR);
-
-			// encode the fec source block repair packets
-			for (EncodingPacket packet : sourceBlockEncoder
-					.repairPacketsIterable(numRepairSymbols)) {
-				Log.d(TAG,
-						"repair packet: " + Arrays.toString(packet.asArray()));
-
-				baos.write(packet.asArray(), packet.asArray().length
-						- Constants.FEC_SYMBOL_SIZE, Constants.FEC_SYMBOL_SIZE);
-			}
-		}
-
-		return baos.toByteArray();
 	}
 
 	private class PlayStringTask extends AsyncTask<String, Void, Integer> {
@@ -260,6 +191,7 @@ public class ModemService extends Service {
 			return compressionRatio;
 		}
 
+		@Override
 		protected void onPostExecute(Integer result) {
 			if (result < 0)
 				return;
@@ -267,6 +199,133 @@ public class ModemService extends Service {
 			Toast.makeText(getApplication(),
 					"Compression ratio of " + result + "%", Toast.LENGTH_SHORT)
 					.show();
+		}
+
+		/**
+		 * Applies forward error correction encoding to an array of bytes.
+		 * 
+		 * @param bytes
+		 *            an array of bytes to encode with FEC.
+		 * @return an array list of chunks containing the data's FEC symbols as
+		 *         payloads.
+		 */
+		private byte[] applyFECEncoding(byte[] bytes) {
+			Log.d(TAG, "applyFECEncoding(): " + Arrays.toString(bytes));
+
+			// the total length in bytes of the data to be encoded
+			int dataLength = bytes.length;
+
+			// apply forward error correction encoding
+			FECParameters fecParams = FECParameters.deriveParameters(
+					dataLength, Constants.FEC_SYMBOL_SIZE,
+					Constants.FEC_MAX_DECODING_BLOCK_BYTES);
+			ArrayDataEncoder fecDataEncoder = OpenRQ.newEncoder(bytes,
+					fecParams);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream(dataLength);
+			for (SourceBlockEncoder sourceBlockEncoder : fecDataEncoder
+					.sourceBlockIterable()) {
+				// encode the fec source block source packets
+				for (EncodingPacket packet : sourceBlockEncoder
+						.sourcePacketsIterable()) {
+					Log.d(TAG,
+							"source packet: "
+									+ Arrays.toString(packet.asArray()));
+
+					baos.write(packet.asArray(), packet.asArray().length
+							- Constants.FEC_SYMBOL_SIZE,
+							Constants.FEC_SYMBOL_SIZE);
+				}
+
+				// number of repair symbols
+				// (e.g. the number may depend on a channel loss rate)
+				int numRepairSymbols = (int) Math.ceil(sourceBlockEncoder
+						.numberOfSourceSymbols() * Constants.FEC_DEGREE_REPAIR);
+
+				// encode the fec source block repair packets
+				for (EncodingPacket packet : sourceBlockEncoder
+						.repairPacketsIterable(numRepairSymbols)) {
+					Log.d(TAG,
+							"repair packet: "
+									+ Arrays.toString(packet.asArray()));
+
+					baos.write(packet.asArray(), packet.asArray().length
+							- Constants.FEC_SYMBOL_SIZE,
+							Constants.FEC_SYMBOL_SIZE);
+				}
+			}
+
+			// encode data length as first byte
+			byte[] lengthPrefixed = ArrayUtils.concatenate(
+					new byte[] { (byte) dataLength }, baos.toByteArray());
+
+			return lengthPrefixed;
+		}
+	}
+
+	private class DecodeBytesTask extends AsyncTask<Byte, Void, Void> {
+
+		@Override
+		protected Void doInBackground(Byte... bytes) {
+			// unbox the byte values
+			byte[] data = new byte[bytes.length];
+			for (int i = 0; i < bytes.length; i++)
+				data[i] = bytes[i].byteValue();
+
+			// extract the text content
+			String text = null;
+			if (mUseFEC)
+				data = applyFECDecoding(data);
+
+			if (mUseCompression)
+				text = new Smaz().decompress(data);
+
+			if (text == null)
+				text = new String(data);
+
+			synchronized (mReceivedText) {
+				StringBuilder sb = new StringBuilder(mReceivedText);
+				sb.append("\n");
+				sb.append(text);
+
+				mReceivedText = sb.toString();
+			}
+
+			return null;
+		}
+
+		private byte[] applyFECDecoding(byte[] bytes) {
+			// data length is encoded as the first bye
+			int dataLength = (int) bytes[0];
+
+			FECParameters fecParams = FECParameters.deriveParameters(
+					dataLength, Constants.FEC_SYMBOL_SIZE,
+					Constants.FEC_MAX_DECODING_BLOCK_BYTES);
+			ArrayDataDecoder fecDataDecoder = OpenRQ.newDecoder(fecParams,
+					Constants.FEC_EXTRA_SYMBOLS);
+
+			Parsed<EncodingPacket> parsed;
+			byte[] packet;
+			for (int i = 1; i < bytes.length;) { // begin at the first byte
+				// construct a "faked" FEC encoded packet
+				packet = new byte[Constants.FEC_PACKET_SIZE];
+				packet[Constants.FEC_PACKET_NUMBER_INDEX] = (byte) i;
+				packet[packet.length - 1 - Constants.FEC_SYMBOL_SIZE] = (byte) Constants.FEC_SYMBOL_SIZE;
+				for (int j = Constants.FEC_SYMBOL_SIZE; j > 0; j--) {
+					packet[packet.length - j] = bytes[i++];
+				}
+
+				parsed = fecDataDecoder.parsePacket(packet, true);
+				if (!parsed.isValid())
+					continue;
+
+				fecDataDecoder.sourceBlock(parsed.value().sourceBlockNumber())
+						.putEncodingPacket(parsed.value());
+
+				if (fecDataDecoder.isDataDecoded())
+					return fecDataDecoder.dataArray();
+			}
+
+			return null;
 		}
 	}
 }
