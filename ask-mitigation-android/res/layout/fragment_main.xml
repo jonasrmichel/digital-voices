@@ -37,10 +37,10 @@
                 android:textSize="12dp" />
 
             <CheckBox
-                android:id="@+id/CheckBoxUseFEC"
+                android:id="@+id/CheckBoxUseChecksum"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/play_option_fec"
+                android:text="@string/play_option_checksum"
                 android:textSize="12dp" />
         </LinearLayout>
 

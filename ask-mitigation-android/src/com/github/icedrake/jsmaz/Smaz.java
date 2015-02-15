@@ -154,8 +154,8 @@ public class Smaz {
                 int slotEndIndex = slotIndex + j + 1;
                 while (slotLength > 0 && slotEndIndex <= slotLength) {
                     if (slot.get(slotIndex) == j && inlen >= j &&
-                            slot.subSequence(slotIndex + 1, slotEndIndex).toString()
-                                    .equals(charBuffer.subSequence(0, j).toString())) {
+                            slot.toString().subSequence(slotIndex + 1, slotEndIndex).toString()
+                                    .equals(charBuffer.toString().subSequence(0, j).toString())) {
                         // Match found in codebook
                         // Add verbatim data if needed
                         if (verb.length() > 0) {
@@ -181,7 +181,7 @@ public class Smaz {
             if (!found) {
                 if (inlen > 0) {
                     inlen--;
-                    verb.append(charBuffer.subSequence(0, 1).toString());
+                    verb.append(charBuffer.toString().subSequence(0, 1).toString());
                 }
                 charBuffer.position(charBuffer.position() + 1);
             }

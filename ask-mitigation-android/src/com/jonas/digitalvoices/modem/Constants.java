@@ -8,38 +8,9 @@ package com.jonas.digitalvoices.modem;
 
 public interface Constants {
 
-	/** The maximum length of a playable text message. */
-	public static final int MAX_INPUT_LENGTH = 32;
-
-	/** The size of an FEC symbol. */
-	public static final int FEC_SYMBOL_SIZE = 1;
-
-	/**
-	 * The maximum number of bytes for an FEC source block decodable in working
-	 * memory.
-	 */
-	public static final int FEC_MAX_DECODING_BLOCK_BYTES = 256;
-
-	/**
-	 * The degree of FEC repair as a proportion of FEC source block source
-	 * symbols.
-	 */
-	public static final float FEC_DEGREE_REPAIR = 1.0f;
-
-	/** The size of an encoded FEC packet byte array. */
-	public static final int FEC_PACKET_SIZE = 9;
+	public static final int COMPRESSION_FLAG_BIT = 6;
+	public static final int CHECKSUM_FLAG_BIT = 7;
 	
-	/** The index of the packet number in an encoded FEC packet byte array. */
-	public static final int FEC_PACKET_NUMBER_INDEX = 3;
-
-	/**
-	 * FEC repair symbol overhead (must be non-negative). The repair symbol
-	 * overhead is given as a number of extra repair symbols that add up
-	 * together with the amount of source symbols as the total number of
-	 * encoding symbols that trigger a decoding operation.
-	 */
-	public static final int FEC_EXTRA_SYMBOLS = 0;
-
 	public static final double kLowFrequency = 600; // the lowest frequency used
 	public static final double kFrequencyStep = 50; // the distance between
 													// frequencies

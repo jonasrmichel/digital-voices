@@ -115,8 +115,11 @@ public class StreamDecoder implements Runnable {
 											// back to key detection mode
 						// out.write("EOF\r\n".getBytes()); //this is for
 						// debugging
-						receivedBytes(out.toByteArray());
-						; // signal complete reception
+						byte[] data = out.toByteArray();
+						// remove the trailing 0
+						data = ArrayUtils.subarray(data, 0, data.length - 1);
+						
+						receivedBytes(data); // signal complete reception
 
 						out.reset();
 						hasKey = false;
