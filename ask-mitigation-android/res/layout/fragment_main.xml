@@ -33,6 +33,7 @@
                 android:id="@+id/CheckBoxUseCompression"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
                 android:text="@string/play_option_compression"
                 android:textSize="18dp" />
 
@@ -45,11 +46,11 @@
         </LinearLayout>
 
         <CheckBox
-                android:id="@+id/CheckBoxUseFEC"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/play_option_fec"
-                android:textSize="18dp" />
+            android:id="@+id/CheckBoxUseFEC"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/play_option_fec"
+            android:textSize="18dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -94,7 +95,8 @@
             android:gravity="left"
             android:padding="5dp"
             android:text=""
-            android:textSize="25dp" >
+            android:textSize="25dp"
+            android:scrollbars="vertical" >
         </TextView>
     </LinearLayout>
 

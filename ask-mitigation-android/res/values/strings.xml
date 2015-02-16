@@ -4,6 +4,8 @@
     <string name="app_name">Acoustic Modem</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="backlog">Backlog:</string>
+    <string name="playing">Playing&#8230;</string>
     <string name="play_text_hint">Type some text to play</string>
     <string name="play_option_compression">Compress</string>
     <string name="play_option_checksum">Checksum</string>

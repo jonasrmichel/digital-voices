@@ -2,15 +2,9 @@ package com.jonas.digitalvoices.modem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
-import net.fec.openrq.ArrayDataDecoder;
-import net.fec.openrq.ArrayDataEncoder;
-import net.fec.openrq.EncodingPacket;
-import net.fec.openrq.OpenRQ;
-import net.fec.openrq.Parsed;
-import net.fec.openrq.encoder.SourceBlockEncoder;
-import net.fec.openrq.parameters.FECParameters;
 import android.app.Service;
 import android.content.Intent;
 import android.os.AsyncTask;
@@ -22,10 +16,9 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.github.icedrake.jsmaz.Smaz;
-import com.jonas.reedsolomon.Berlekamp;
+import com.jonas.digitalvoices.R;
 import com.jonas.reedsolomon.CRCGen;
 import com.jonas.reedsolomon.RS;
-import com.jonas.reedsolomon.Settings;
 
 public class ModemService extends Service {
 	public static final String TAG = ModemService.class.getSimpleName();
@@ -35,6 +28,8 @@ public class ModemService extends Service {
 	private MicrophoneListener mMicrophoneListener = null;
 	private StreamDecoder mStreamDecoder = null;
 	private ByteArrayOutputStream mDecodedStream = new ByteArrayOutputStream();
+
+	private Boolean mIsPlaying = false;
 
 	private boolean mUseCompression = false;
 	private boolean mUseChecksum = false;
@@ -89,9 +84,25 @@ public class ModemService extends Service {
 		mUseFEC = useFEC;
 	}
 
-	public String getBacklogStatus() {
-		if (mStreamDecoder == null)
+	public void setIsPlaying(boolean isPlaying) {
+		synchronized (mIsPlaying) {
+			mIsPlaying = isPlaying;
+		}
+	}
+
+	public boolean isPlaying() {
+		synchronized (mIsPlaying) {
+			return mIsPlaying;
+		}
+	}
+
+	public String getModemStatus() {
+		if (isPlaying())
+			return getResources().getString(R.string.playing);
+
+		else if (mStreamDecoder == null)
 			return "";
+
 		else
 			return mStreamDecoder.getStatusString();
 	}
@@ -214,7 +225,22 @@ public class ModemService extends Service {
 					data);
 
 			try {
+				long millisPlayTime = (long) ((Constants.kPlayJitter
+						+ Constants.kDurationsPerHail
+						+ Constants.kBytesPerDuration * data.length + Constants.kDurationsPerCRC)
+						* Constants.kSamplesPerDuration
+						/ Constants.kSamplingFrequency * 1000);
+
+				Executors.newSingleThreadScheduledExecutor().schedule(
+						new Runnable() {
+							@Override
+							public void run() {
+								setIsPlaying(false);
+							}
+						}, millisPlayTime, TimeUnit.MILLISECONDS);
+
 				// play the input
+				setIsPlaying(true);
 				AudioUtils.performArray(data);
 
 			} catch (IOException e) {

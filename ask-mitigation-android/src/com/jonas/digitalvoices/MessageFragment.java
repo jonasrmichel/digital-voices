@@ -242,9 +242,12 @@ public class MessageFragment extends Fragment {
 	private void updateResults() {
 		mTextViewListen.setText(mModemService.getReceivedText());
 
-		if (mModemService != null && mModemService.isListening()) {
-			mTextViewStatus.setText(mModemService.getBacklogStatus());
-			mButtonListen.setText(R.string.button_text_stop_listening);
+		if (mModemService != null
+				&& (mModemService.isListening() || mModemService.isPlaying())) {
+			mTextViewStatus.setText(mModemService.getModemStatus());
+
+			if (mModemService.isListening())
+				mButtonListen.setText(R.string.button_text_stop_listening);
 
 		} else {
 			mTextViewStatus.setText("");
