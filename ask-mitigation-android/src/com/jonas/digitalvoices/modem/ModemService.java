@@ -2,6 +2,8 @@ package com.jonas.digitalvoices.modem;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
@@ -269,13 +271,13 @@ public class ModemService extends Service {
 	 * options), payloadLength, payload (optionally compressed), error
 	 * correction bytes (optional), checksum (optional).
 	 */
-	private class ReceiveDataTask extends AsyncTask<Byte, Void, String> {
+	private class ReceiveDataTask extends AsyncTask<Byte, Void, List<String>> {
 		private boolean showToast = false;
 
 		@Override
-		protected String doInBackground(Byte... bytes) {
+		protected List<String> doInBackground(Byte... bytes) {
 			byte[] data = ArrayUtils.unbox(bytes);
-			String toastText = null;
+			List<String> toastText = new ArrayList<String>();
 
 			// get header bytes
 			byte flags = data[0];
@@ -291,15 +293,23 @@ public class ModemService extends Service {
 				byte generatedCRC = CRCGen.crc_8_ccitt(data, payloadLength);
 				byte receivedCRC = data[data.length - 1];
 
-				if (generatedCRC != receivedCRC && !useFEC) {
-					toastText = "Received corrupted text";
+				try {
+					if (generatedCRC != receivedCRC) {
+						toastText.add("Received corrupted text");
+						showToast = true;
+
+						return toastText;
+
+					} else {
+						toastText.add("Received valid text");
+						showToast = true;
+					}
+				
+				} catch (ArrayIndexOutOfBoundsException e) {
+					toastText.add("Received corrupted checksum");
 					showToast = true;
 
 					return toastText;
-
-				} else {
-					toastText = "Received valid text";
-					showToast = true;
 				}
 
 				// remove checksum byte
@@ -313,14 +323,14 @@ public class ModemService extends Service {
 
 					rs.decode_data(data, payloadLength);
 					if (rs.check_syndrome() != 0) {
-						toastText = "Attempting to repair corrupted text";
+						toastText.add("Attempting to correct errors");
 						showToast = true;
 
 						rs.correct_errors_erasures(data, payloadLength, 0, null);
 					}
 
 				} catch (ArrayIndexOutOfBoundsException e) {
-					toastText = "Received unrepairable corrupted text";
+					toastText.add("Received unrepairable corrupted text");
 					showToast = true;
 
 					return toastText;
@@ -338,8 +348,8 @@ public class ModemService extends Service {
 				int decompressionRatio = (int) ((float) text.length()
 						/ (float) data.length * 100);
 
-				toastText = "Decompressed text by "
-						+ Integer.toString(decompressionRatio) + "%";
+				toastText.add("Decompressed text by "
+						+ Integer.toString(decompressionRatio) + "%");
 				showToast = true;
 
 			} else {
@@ -361,11 +371,13 @@ public class ModemService extends Service {
 		}
 
 		@Override
-		protected void onPostExecute(String result) {
+		protected void onPostExecute(List<String> results) {
 			if (!showToast)
 				return;
 
-			Toast.makeText(getApplication(), result, Toast.LENGTH_SHORT).show();
+			for (String result : results)
+				Toast.makeText(getApplication(), result, Toast.LENGTH_SHORT)
+						.show();
 		}
 
 	}

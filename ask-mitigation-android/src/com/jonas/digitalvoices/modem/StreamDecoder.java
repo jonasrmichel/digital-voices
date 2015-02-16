@@ -67,9 +67,11 @@ public class StreamDecoder implements Runnable {
 					R.string.status_backlog_units));
 		}
 
-		if (hasKey)
+		if (hasKey) {
+			sb.append(" ");
 			sb.append(context.getResources().getString(
 					R.string.status_found_key));
+		}
 
 		return sb.toString();
 	}
