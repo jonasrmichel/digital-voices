@@ -98,13 +98,13 @@ public class ModemService extends Service {
 
 	public String getModemStatus() {
 		if (isPlaying())
-			return getResources().getString(R.string.playing);
+			return getResources().getString(R.string.status_playing);
 
-		else if (mStreamDecoder == null)
-			return "";
+		else if (mStreamDecoder != null)
+			return mStreamDecoder.getStatusString(ModemService.this);
 
 		else
-			return mStreamDecoder.getStatusString();
+			return "";
 	}
 
 	public String getReceivedText() {
@@ -170,8 +170,8 @@ public class ModemService extends Service {
 	 * be compressed and/or sent with a checksum.
 	 * 
 	 * A transmission sequence consists of: flag byte (compression and checksum
-	 * options), payloadLength, payload (optionally compressed), checksum
-	 * (optional).
+	 * options), payloadLength, payload (optionally compressed), error
+	 * correction bytes (optional), checksum (optional).
 	 */
 	private class SendDataTask extends AsyncTask<Byte, Void, String> {
 		private boolean showToast = false;
@@ -266,8 +266,8 @@ public class ModemService extends Service {
 	 * and/or sent with a checksum.
 	 * 
 	 * A transmission sequence consists of: flag byte (compression and checksum
-	 * options), payloadLength, payload (optionally compressed), checksum
-	 * (optional).
+	 * options), payloadLength, payload (optionally compressed), error
+	 * correction bytes (optional), checksum (optional).
 	 */
 	private class ReceiveDataTask extends AsyncTask<Byte, Void, String> {
 		private boolean showToast = false;
@@ -292,10 +292,14 @@ public class ModemService extends Service {
 				byte receivedCRC = data[data.length - 1];
 
 				if (generatedCRC != receivedCRC && !useFEC) {
-					toastText = "Received corrupted data";
+					toastText = "Received corrupted text";
 					showToast = true;
 
 					return toastText;
+
+				} else {
+					toastText = "Received valid text";
+					showToast = true;
 				}
 
 				// remove checksum byte
@@ -309,14 +313,14 @@ public class ModemService extends Service {
 
 					rs.decode_data(data, payloadLength);
 					if (rs.check_syndrome() != 0) {
-						toastText = "Attempting to repair corrupted data";
+						toastText = "Attempting to repair corrupted text";
 						showToast = true;
 
 						rs.correct_errors_erasures(data, payloadLength, 0, null);
 					}
 
 				} catch (ArrayIndexOutOfBoundsException e) {
-					toastText = "Received unrepairable corrupted data";
+					toastText = "Received unrepairable corrupted text";
 					showToast = true;
 
 					return toastText;

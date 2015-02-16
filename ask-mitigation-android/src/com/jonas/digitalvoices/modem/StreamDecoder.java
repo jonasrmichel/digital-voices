@@ -9,9 +9,12 @@ package com.jonas.digitalvoices.modem;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+
+import com.jonas.digitalvoices.R;
 
 /**
  * This starts a Thread which decodes data in an AudioBuffer and writes it to an
@@ -51,18 +54,24 @@ public class StreamDecoder implements Runnable {
 		myThread.start();
 	}
 
-	public String getStatusString() {
-		String s = "";
-
+	public String getStatusString(Context context) {
+		StringBuilder sb = new StringBuilder();
 		int backlog = (int) ((1000 * buffer.size()) / Constants.kSamplingFrequency);
 
-		if (backlog > 0)
-			s += "Backlog: " + backlog + " ms ";
+		if (backlog > 0) {
+			sb.append(context.getResources().getString(R.string.status_backlog));
+			sb.append(" ");
+			sb.append(Integer.toString(backlog));
+			sb.append(" ");
+			sb.append(context.getResources().getString(
+					R.string.status_backlog_units));
+		}
 
 		if (hasKey)
-			s += "Found key sequence ";
+			sb.append(context.getResources().getString(
+					R.string.status_found_key));
 
-		return s;
+		return sb.toString();
 	}
 
 	public AudioBuffer getAudioBuffer() {
@@ -118,7 +127,7 @@ public class StreamDecoder implements Runnable {
 						byte[] data = out.toByteArray();
 						// remove the trailing 0
 						data = ArrayUtils.subarray(data, 0, data.length - 1);
-						
+
 						receivedBytes(data); // signal complete reception
 
 						out.reset();
