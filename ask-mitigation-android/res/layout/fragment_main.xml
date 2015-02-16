@@ -34,15 +34,22 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/play_option_compression"
-                android:textSize="12dp" />
+                android:textSize="18dp" />
 
             <CheckBox
                 android:id="@+id/CheckBoxUseChecksum"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/play_option_checksum"
-                android:textSize="12dp" />
+                android:textSize="18dp" />
         </LinearLayout>
+
+        <CheckBox
+                android:id="@+id/CheckBoxUseFEC"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/play_option_fec"
+                android:textSize="18dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -77,7 +84,7 @@
             android:padding="5dp"
             android:text=""
             android:textColor="#aaacae"
-            android:textSize="20dp" >
+            android:textSize="18dp" >
         </TextView>
 
         <TextView

@@ -36,7 +36,7 @@ package com.jonas.reedsolomon;
  * CRC-CCITT = x^16 + x^12 + x^5 + 1
  *
  */
-public class CRCGen implements Settings {
+public class CRCGen {
 
 	/*
 	 * Reads in a sequence of bytes and returns its 16 bit Cylcic Redundancy
@@ -44,7 +44,7 @@ public class CRCGen implements Settings {
 	 * 
 	 * 1 + x + x^5 + x^12 + x^16 is irreducible polynomial.
 	 * 
-	 * Copyright 2000Ð2011, Robert Sedgewick and Kevin Wayne
+	 * Copyright 2000-2011, Robert Sedgewick and Kevin Wayne
 	 * source: http://introcs.cs.princeton.edu/java/51data/CRC16CCITT.java.html
 	 */
 	public static int crc_16_ccitt(byte[] msg, int len) {

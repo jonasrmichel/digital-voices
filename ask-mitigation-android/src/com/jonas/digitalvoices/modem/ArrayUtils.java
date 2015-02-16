@@ -1,5 +1,7 @@
 package com.jonas.digitalvoices.modem;
 
+import java.io.ByteArrayOutputStream;
+
 /**
  * Copyright 2002 by the authors. All rights reserved.
  *

@@ -60,7 +60,8 @@ public class MessageFragment extends Fragment {
 
 	/** UI elements. */
 	private EditText mEditTextToPlay;
-	private CheckBox mCheckBoxUseCompression, mCheckBoxUseChecksum;
+	private CheckBox mCheckBoxUseCompression, mCheckBoxUseChecksum,
+			mCheckBoxUseFEC;
 	private Button mButtonPlay, mButtonListen;
 	private TextView mTextViewStatus, mTextViewListen;
 
@@ -92,6 +93,16 @@ public class MessageFragment extends Fragment {
 					public void onCheckedChanged(CompoundButton buttonView,
 							boolean isChecked) {
 						mModemService.setUseChecksum(isChecked);
+					}
+				});
+
+		mCheckBoxUseFEC = (CheckBox) rootView.findViewById(R.id.CheckBoxUseFEC);
+		mCheckBoxUseFEC
+				.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+					@Override
+					public void onCheckedChanged(CompoundButton buttonView,
+							boolean isChecked) {
+						mModemService.setUseFEC(isChecked);
 					}
 				});
 
@@ -230,7 +241,7 @@ public class MessageFragment extends Fragment {
 	 */
 	private void updateResults() {
 		mTextViewListen.setText(mModemService.getReceivedText());
-		
+
 		if (mModemService != null && mModemService.isListening()) {
 			mTextViewStatus.setText(mModemService.getBacklogStatus());
 			mButtonListen.setText(R.string.button_text_stop_listening);

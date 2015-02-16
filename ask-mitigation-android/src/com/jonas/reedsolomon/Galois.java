@@ -36,7 +36,7 @@ package com.jonas.reedsolomon;
  * From Mee, Daniel, "Magnetic Recording, Volume III", Ch. 5 by Patel.
  * 
  */
-public class Galois implements Settings {
+public class Galois {
 	/* This is one of 14 irreducible polynomials
 	 * of degree 8 and cycle length 255. (Ch 5, pp. 275, Magnetic Recording)
 	 * The high order 1 bit is implicit

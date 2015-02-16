@@ -1,14 +1,14 @@
 package com.jonas.reedsolomon;
 
 /**
- * Reed Solomon Encoder/Decoder 
+ * Reed Solomon Encoder/Decoder
  * 
- * Copyright Henry Minsky (hqm@alum.mit.edu) 1991-2009
- * (Ported to Java by Jonas Michel 2012)
+ * Copyright Henry Minsky (hqm@alum.mit.edu) 1991-2009 (Ported to Java by Jonas
+ * Michel 2012)
  * 
  * This is a direct port of RSCODE by Henry Minsky
  * http://rscode.sourceforge.net/
- *
+ * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -24,69 +24,109 @@ package com.jonas.reedsolomon;
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
  * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE. 
- *
- * Commercial licensing is available under a separate license, please
- * contact author for details.
- *
- * Source code is available at http://code.google.com/p/mobile-acoustic-modems-in-action/
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ * 
+ * Commercial licensing is available under a separate license, please contact
+ * author for details.
+ * 
+ * Source code is available at
+ * http://code.google.com/p/mobile-acoustic-modems-in-action/
  * 
  */
 
-public class RS implements Settings {
+public class RS {
+	/*
+	 * Below is parityBytes, the only parameter you should have to
+	 * modify.
+	 *	  
+	 * It is the number of parity bytes that will be appended to
+	 * your data to create a codeword.
+	 * 
+	 * In general, with E errors, and K erasures, you will need
+	 * 2E + K bytes of parity to be able to correct the codeword
+	 * back to recover the original message data.
+	 *
+	 * You could say that each error 'consumes' two bytes of the parity,
+	 * whereas each erasure 'consumes' one byte.
+	 *	
+	 * Note that the maximum codeword size is 255, so the
+	 * sum of your message length plus parity should be less than
+	 * or equal to this maximum limit.
+	 * 
+	 * In practice, you will get slow error correction and decoding
+	 * if you use more than a reasonably small number of parity bytes.
+	 * (say, 10 or 20)
+	 */
+	private int parityBytes;
+	
+	/* maximum degree of various polynomials */
+	private int maxDeg;
+
+	/* Berlekamp algorithms and supporting tables. */
+	Berlekamp berlekamp;
+
 	/* Encoder parity bytes */
-	static int pBytes[] = new int[Settings.kMaxDeg];
+	private int pBytes[];
 
 	/* Decoder syndrome bytes */
-	static int synBytes[] = new int[Settings.kMaxDeg];
+	private int synBytes[];
 
 	/* generator polynomial */
-	static int genPoly[] = new int[Settings.kMaxDeg * 2];
+	private int genPoly[];
 
-	/* Initialize lookup tables, polynomials, etc. */
-	public static void initialize_ecc() {
+	public RS(int parityBytes) {
+		this.parityBytes = parityBytes;
+		maxDeg = parityBytes * 2;
+
+		pBytes = new int[maxDeg];
+		synBytes = new int[maxDeg];
+		genPoly = new int[maxDeg * 2];
+
 		/* Initialize the galois field arithmetic tables */
 		Galois.init_galois_tables();
+		
+		/* Initialize the Berlekamp tables. */
+		berlekamp = new Berlekamp(parityBytes, synBytes);
 
 		/* Compute the encoder generator polynomial */
-		compute_genpoly(Settings.kParityBytes, genPoly);
+		compute_genpoly(parityBytes, genPoly);
 	}
 
-	void zero_fill_from(byte[] buf, int from, int to) {
+	private void zero_fill_from(byte[] buf, int from, int to) {
 		int i;
 		for (i = from; i < to; i++)
 			buf[i] = 0;
 	}
 
 	/* debugging routines */
-	void print_parity() {
+	private void print_parity() {
 		int i;
 		System.out.print("Parity Bytes: ");
-		for (i = 0; i < Settings.kParityBytes; i++)
+		for (i = 0; i < parityBytes; i++)
 			System.out.print("[" + i + "]: 0x" + Integer.toHexString(pBytes[i])
 					+ ", ");
 		System.out.println();
 	}
 
-	void print_syndrome() {
+	private void print_syndrome() {
 		int i;
 		System.out.print("Syndrome Bytes: ");
-		for (i = 0; i < Settings.kParityBytes; i++)
-			System.out.print("[" + i + "]: 0x" + Integer.toHexString(synBytes[i])
-					+ ", ");
+		for (i = 0; i < parityBytes; i++)
+			System.out.print("[" + i + "]: 0x"
+					+ Integer.toHexString(synBytes[i]) + ", ");
 		System.out.println();
 	}
 
 	/* Append the parity bytes onto the end of the message */
-	static void build_codeword(byte[] msg, int nbytes, byte[] codeword) {
+	private void build_codeword(byte[] msg, int nbytes, byte[] codeword) {
 		int i;
 
 		for (i = 0; i < nbytes; i++)
 			codeword[i] = msg[i];
 
-		for (i = 0; i < Settings.kParityBytes; i++) {
-			codeword[i + nbytes] = (byte) pBytes[Settings.kParityBytes - 1 - i];
+		for (i = 0; i < parityBytes; i++) {
+			codeword[i + nbytes] = (byte) pBytes[parityBytes - 1 - i];
 		}
 	}
 
@@ -97,22 +137,23 @@ public class RS implements Settings {
 	 * array.
 	 */
 
-	public static void decode_data(byte[] codeword, int nbytes) {
+	public void decode_data(byte[] codeword, int nbytes) {
 		int i, j, sum;
-		for (j = 0; j < Settings.kParityBytes; j++) {
+		for (j = 0; j < parityBytes; j++) {
 			sum = 0;
 			for (i = 0; i < nbytes; i++) {
 				// !!!: byte-ify
-				sum = (0xFF & (int)codeword[i]) ^ Galois.gmult(Galois.gexp[j + 1], sum);
+				sum = (0xFF & (int) codeword[i])
+						^ Galois.gmult(Galois.gexp[j + 1], sum);
 			}
 			synBytes[j] = sum;
 		}
 	}
 
 	/* Check if the syndrome is zero */
-	static int check_syndrome() {
+	public int check_syndrome() {
 		int i, nz = 0;
-		for (i = 0; i < Settings.kParityBytes; i++) {
+		for (i = 0; i < parityBytes; i++) {
 			if (synBytes[i] != 0) {
 				nz = 1;
 				break;
@@ -121,7 +162,7 @@ public class RS implements Settings {
 		return nz;
 	}
 
-	void debug_check_syndrome() {
+	public void debug_check_syndrome() {
 		int i;
 
 		for (i = 0; i < 3; i++) {
@@ -141,22 +182,21 @@ public class RS implements Settings {
 	 * passed in is at least n+1 bytes long.
 	 */
 
-	static void compute_genpoly(int nbytes, int genpoly[]) {
+	private void compute_genpoly(int nbytes, int genpoly[]) {
 		int i;
 		int tp[] = new int[256], tp1[] = new int[256];
 
 		/* multiply (x + a^n) for n = 1 to nbytes */
-
-		Berlekamp.zero_poly(tp1);
+		berlekamp.zero_poly(tp1);
 		tp1[0] = 1;
 
 		for (i = 1; i <= nbytes; i++) {
-			Berlekamp.zero_poly(tp);
+			berlekamp.zero_poly(tp);
 			tp[0] = Galois.gexp[i]; /* set up x+a^n */
 			tp[1] = 1;
 
-			Berlekamp.mult_polys(genpoly, tp, tp1);
-			Berlekamp.copy_poly(tp1, genpoly);
+			berlekamp.mult_polys(genpoly, tp, tp1);
+			berlekamp.copy_poly(tp1, genpoly);
 		}
 	}
 
@@ -168,25 +208,31 @@ public class RS implements Settings {
 	 * parity are copied to dest to make a codeword.
 	 */
 
-	public static void encode_data(byte[] msg, int nbytes, byte[] codeword) {
+	public void encode_data(byte[] msg, int nbytes, byte[] codeword) {
 		int i;
-		int LFSR[] = new int[Settings.kParityBytes + 1], dbyte, j;
+		int LFSR[] = new int[parityBytes + 1], dbyte, j;
 
-		for (i = 0; i < Settings.kParityBytes + 1; i++)
+		for (i = 0; i < parityBytes + 1; i++)
 			LFSR[i] = 0;
 
 		for (i = 0; i < nbytes; i++) {
 			// !!!: byte-ify
-			dbyte = ((msg[i] ^ LFSR[Settings.kParityBytes - 1]) & 0xFF);
-			for (j = Settings.kParityBytes - 1; j > 0; j--) {
+			dbyte = ((msg[i] ^ LFSR[parityBytes - 1]) & 0xFF);
+			for (j = parityBytes - 1; j > 0; j--) {
 				LFSR[j] = LFSR[j - 1] ^ Galois.gmult(genPoly[j], dbyte);
 			}
 			LFSR[0] = Galois.gmult(genPoly[0], dbyte);
 		}
 
-		for (i = 0; i < Settings.kParityBytes; i++)
+		for (i = 0; i < parityBytes; i++)
 			pBytes[i] = LFSR[i];
 
 		build_codeword(msg, nbytes, codeword);
+	}
+
+	public int correct_errors_erasures(byte[] codeword, int csize,
+			int nerasures, int erasures[]) {
+		return berlekamp.correct_errors_erasures(codeword, csize, nerasures,
+				erasures);
 	}
 }

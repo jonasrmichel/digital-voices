@@ -22,7 +22,10 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.github.icedrake.jsmaz.Smaz;
+import com.jonas.reedsolomon.Berlekamp;
 import com.jonas.reedsolomon.CRCGen;
+import com.jonas.reedsolomon.RS;
+import com.jonas.reedsolomon.Settings;
 
 public class ModemService extends Service {
 	public static final String TAG = ModemService.class.getSimpleName();
@@ -35,6 +38,7 @@ public class ModemService extends Service {
 
 	private boolean mUseCompression = false;
 	private boolean mUseChecksum = false;
+	private boolean mUseFEC = false;
 
 	private String mReceivedText = "";
 
@@ -74,11 +78,15 @@ public class ModemService extends Service {
 	}
 
 	public void setUseCompression(boolean useCompression) {
-		this.mUseCompression = useCompression;
+		mUseCompression = useCompression;
 	}
 
 	public void setUseChecksum(boolean useChecksum) {
-		this.mUseChecksum = useChecksum;
+		mUseChecksum = useChecksum;
+	}
+
+	public void setUseFEC(boolean useFEC) {
+		mUseFEC = useFEC;
 	}
 
 	public String getBacklogStatus() {
@@ -151,7 +159,8 @@ public class ModemService extends Service {
 	 * be compressed and/or sent with a checksum.
 	 * 
 	 * A transmission sequence consists of: flag byte (compression and checksum
-	 * options), payload (optionally compressed), checksum (optional).
+	 * options), payloadLength, payload (optionally compressed), checksum
+	 * (optional).
 	 */
 	private class SendDataTask extends AsyncTask<Byte, Void, String> {
 		private boolean showToast = false;
@@ -177,16 +186,32 @@ public class ModemService extends Service {
 				showToast = true;
 			}
 
+			// set the payload length byte
+			byte payloadLength = (byte) data.length;
+
+			// apply error correction
+			if (mUseFEC) {
+				flags &= ~(1 << Constants.FEC_FLAG_BIT);
+
+				int parityBytes = Constants.FEC_ERRORS * 2;
+				byte[] codeword = new byte[payloadLength + parityBytes];
+
+				RS rs = new RS(parityBytes);
+				rs.encode_data(data, payloadLength, codeword);
+				data = codeword;
+			}
+
 			// apply a checksum if necessary
 			if (mUseChecksum) {
 				flags &= ~(1 << Constants.CHECKSUM_FLAG_BIT);
 
-				byte crc = CRCGen.crc_8_ccitt(data, data.length);
+				byte crc = CRCGen.crc_8_ccitt(data, payloadLength);
 				data = ArrayUtils.concatenate(data, new byte[] { crc });
 			}
 
-			// attach flags
-			data = ArrayUtils.concatenate(new byte[] { flags }, data);
+			// attach header bytes
+			data = ArrayUtils.concatenate(new byte[] { flags, payloadLength },
+					data);
 
 			try {
 				// play the input
@@ -215,7 +240,8 @@ public class ModemService extends Service {
 	 * and/or sent with a checksum.
 	 * 
 	 * A transmission sequence consists of: flag byte (compression and checksum
-	 * options), payload (optionally compressed), checksum (optional).
+	 * options), payloadLength, payload (optionally compressed), checksum
+	 * (optional).
 	 */
 	private class ReceiveDataTask extends AsyncTask<Byte, Void, String> {
 		private boolean showToast = false;
@@ -225,21 +251,21 @@ public class ModemService extends Service {
 			byte[] data = ArrayUtils.unbox(bytes);
 			String toastText = null;
 
-			// check flags
+			// get header bytes
 			byte flags = data[0];
 			boolean useChecksum = (~(flags >> Constants.CHECKSUM_FLAG_BIT) & 1) == 1;
 			boolean useCompression = (~(flags >> Constants.COMPRESSION_FLAG_BIT) & 1) == 1;
+			boolean useFEC = (~(flags >> Constants.FEC_FLAG_BIT) & 1) == 1;
+			byte payloadLength = data[1];
 
-			// remove flag byte
-			data = ArrayUtils.subarray(data, 1, data.length - 1);
+			// remove header bytes
+			data = ArrayUtils.subarray(data, 2, data.length - 2);
 
 			if (useChecksum) {
-				byte generatedCRC = CRCGen.crc_8_ccitt(
-						ArrayUtils.subarray(data, 0, data.length - 1),
-						data.length - 1);
+				byte generatedCRC = CRCGen.crc_8_ccitt(data, payloadLength);
 				byte receivedCRC = data[data.length - 1];
 
-				if (generatedCRC != receivedCRC) {
+				if (generatedCRC != receivedCRC && !useFEC) {
 					toastText = "Received corrupted data";
 					showToast = true;
 
@@ -248,6 +274,30 @@ public class ModemService extends Service {
 
 				// remove checksum byte
 				data = ArrayUtils.subarray(data, 0, data.length - 1);
+			}
+
+			if (useFEC) {
+				try {
+					int parityBytes = Constants.FEC_ERRORS * 2;
+					RS rs = new RS(parityBytes);
+
+					rs.decode_data(data, payloadLength);
+					if (rs.check_syndrome() != 0) {
+						toastText = "Attempting to repair corrupted data";
+						showToast = true;
+
+						rs.correct_errors_erasures(data, payloadLength, 0, null);
+					}
+
+				} catch (ArrayIndexOutOfBoundsException e) {
+					toastText = "Received unrepairable corrupted data";
+					showToast = true;
+
+					return toastText;
+				}
+
+				// remove parity bytes
+				data = ArrayUtils.subarray(data, 0, payloadLength);
 			}
 
 			String text = null;

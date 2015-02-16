@@ -8,8 +8,11 @@ package com.jonas.digitalvoices.modem;
 
 public interface Constants {
 
-	public static final int COMPRESSION_FLAG_BIT = 6;
 	public static final int CHECKSUM_FLAG_BIT = 7;
+	public static final int COMPRESSION_FLAG_BIT = 6;
+	public static final int FEC_FLAG_BIT = 5;
+	
+	public static final int FEC_ERRORS = 4;
 	
 	public static final double kLowFrequency = 600; // the lowest frequency used
 	public static final double kFrequencyStep = 50; // the distance between
